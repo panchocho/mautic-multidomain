@@ -32,17 +32,6 @@ class RequestListener implements EventSubscriberInterface
 
         $request = $event->getRequest();
         $host = $request->getHost();
-        $scheme = $request->getScheme();
-        
-        // Construct the expected site URL from the current request
-        // E.g. https://client-domain.com
-        $currentSiteUrl = $scheme . '://' . $host;
-        
-        // Append port if it's not standard
-        $port = $request->getPort();
-        if (($scheme === 'http' && $port !== 80) || ($scheme === 'https' && $port !== 443)) {
-            $currentSiteUrl .= ':' . $port;
-        }
 
         // Fetch allowed domains from configuration
         $allowedDomainsString = (string) $this->coreParametersHelper->get('allowed_domains', '');
@@ -54,8 +43,8 @@ class RequestListener implements EventSubscriberInterface
             }
         }
 
-        // Dynamically override the site_url parameter for this request.
-        // This ensures generated URLs, assets, etc. use the requested domain.
-        $this->coreParametersHelper->set('site_url', $currentSiteUrl);
+        // CoreParametersHelper is read-only in Mautic 7, so runtime mutation of site_url
+        // is not supported through this service. Keeping the request validation only avoids
+        // fatal errors while preserving normal host-based URL generation from Symfony request context.
     }
 }

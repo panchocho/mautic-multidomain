@@ -20,7 +20,7 @@ class TrackingSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            PageEvents::PAGE_ON_TRACKING => ['onPageTracking', 0],
+            PageEvents::ON_CONTACT_TRACKED => ['onPageTracking', 0],
         ];
     }
 

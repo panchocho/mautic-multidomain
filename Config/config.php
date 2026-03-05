@@ -6,6 +6,9 @@ return [
     'description' => 'Enables tracking and serving content across multiple domains dynamically based on the request host.',
     'version'     => '1.0.0',
     'author'      => 'Antigravity',
+    'parameters'  => [
+        'allowed_domains' => '',
+    ],
     'services'    => [
         'events' => [
             'mautic.multidomain.subscriber.request' => [

@@ -23,7 +23,6 @@ class ConfigSubscriber implements EventSubscriberInterface
             'bundle'     => 'MauticMultidomainBundle',
             'formAlias'  => 'mautic_multidomain_config',
             'formType'   => ConfigType::class,
-            'formTheme'  => 'MauticMultidomainBundle:FormTheme\Config',
             'parameters' => $event->getParametersFromConfig('MauticMultidomainBundle'),
         ]);
     }
