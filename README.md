@@ -6,6 +6,7 @@ This plugin enables a single Mautic installation (version 7.01+) to handle track
 
 * **Dynamic Domain Resolving**: Automatically identifies the incoming HTTP request domain and overrides Mautic's internal URL generation, ensuring landing pages and tracking scripts use the client's specific domain.
 * **Email Tracking Rewriting**: Intercepts outgoing emails and rewrites tracking pixels, unsubscribe links, and webviews to match the sender's domain (e.g., if the sender is `info@client.com`, links are rewritten to `https://client.com`).
+* **Per-Domain Mailer Overrides**: Optionally applies per-domain `mailer_dsn`, `from_email`, `from_name`, `reply_to`, `return_path`, and custom headers when an email is sent.
 * **Security & Allowed Domains**: Includes a configuration panel in Mautic Global Settings where administrators can define a whitelist of allowed domains. Requests from unauthorized domains fall back to the central Mautic URL.
 
 ## Requirements
@@ -30,6 +31,27 @@ This plugin enables a single Mautic installation (version 7.01+) to handle track
 2. Locate the new **Allowed Domains** setting provided by this bundle.
 3. Enter the domains you wish to support, separated by commas (e.g., `client1.com, client2.com`).
    * *Note: Only domains listed here will be dynamically resolved. All other domains will fall back to your default site URL.*
+4. (Optional) Configure **Domain Mailer Map (JSON)** to define SMTP and sender overrides per sender domain.
+   Example:
+   ```json
+   {
+     "client1.com": {
+       "mailer_dsn": "smtp://user:pass@smtp.client1.com:587",
+       "from_email": "info@client1.com",
+       "from_name": "Client 1",
+       "reply_to": "reply@client1.com",
+       "return_path": "bounce@client1.com",
+       "headers": {
+         "X-Tenant": "client1"
+       }
+     },
+     "client2.com": {
+       "mailer_dsn": "smtps://apikey:secret@smtp.provider.com:465",
+       "from_email": "marketing@client2.com"
+     }
+   }
+   ```
+   Matching is exact first, then parent-domain fallback (e.g., `mail.news.client.com` can use `news.client.com` or `client.com`).
 
 ## Limitations and Important Notes
 

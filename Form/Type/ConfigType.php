@@ -27,6 +27,22 @@ class ConfigType extends AbstractType
                 'required'   => false,
             ]
         );
+
+        $builder->add(
+            'domain_mailer_map',
+            TextareaType::class,
+            [
+                'label'      => 'mautic.multidomain.config.domain_mailer_map',
+                'label_attr' => ['class' => 'control-label'],
+                'attr'       => [
+                    'class'   => 'form-control',
+                    'tooltip' => 'mautic.multidomain.config.domain_mailer_map.tooltip',
+                    'placeholder' => "{\n  \"client1.com\": {\n    \"mailer_dsn\": \"smtp://user:pass@smtp.client1.com:587\",\n    \"from_email\": \"info@client1.com\",\n    \"from_name\": \"Client 1\",\n    \"reply_to\": \"reply@client1.com\",\n    \"return_path\": \"bounce@client1.com\",\n    \"headers\": {\n      \"X-Tenant\": \"client1\"\n    }\n  }\n}",
+                    'rows'    => 12,
+                ],
+                'required'   => false,
+            ]
+        );
     }
 
     public function configureOptions(OptionsResolver $resolver): void
