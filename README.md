@@ -17,7 +17,7 @@ This plugin enables a single Mautic installation (version 7.01+) to handle track
 ## Installation
 
 1. Download or clone this repository.
-2. Move the `MauticMultidomainBundle` directory into the `plugins/` folder of your Mautic installation.
+2. Copy this plugin folder into `plugins/MauticMultidomainBundle/` in your Mautic installation (the folder should contain `Config/`, `EventListener/`, `Form/`, `Translations/`, and `MauticMultidomainBundle.php` at its root).
 3. Clear the Mautic cache:
    ```bash
    php bin/console cache:clear

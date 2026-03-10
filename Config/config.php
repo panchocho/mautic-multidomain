@@ -7,7 +7,8 @@ return [
     'version'     => '1.0.0',
     'author'      => 'Antigravity',
     'parameters'  => [
-        'allowed_domains' => '',
+        'allowed_domains'   => '',
+        'domain_mailer_map' => '',
     ],
     'services'    => [
         'events' => [

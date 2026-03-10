@@ -55,8 +55,8 @@ class EmailSubscriber implements EventSubscriberInterface
     public function onEmailDisplay(EmailBuilderEvent $event): void
     {
         // When viewing the email in the browser
-        // Since we already have RequestListener mutating site_url, we might not need this,
-        // but we still do it to ensure consistency.
+        // Email display hooks are kept for future display-time domain customizations.
+        // Runtime site_url mutation is intentionally not used in Mautic 7.
     }
 
     private function resolveSenderDomain(EmailSendEvent $event): ?string
