@@ -3,20 +3,12 @@ declare(strict_types=1);
 
 namespace MauticPlugin\MauticMultidomainBundle\EventListener;
 
-use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\PageBundle\Event\TrackingEvent;
 use Mautic\PageBundle\PageEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class TrackingSubscriber implements EventSubscriberInterface
 {
-    private CoreParametersHelper $coreParametersHelper;
-
-    public function __construct(CoreParametersHelper $coreParametersHelper)
-    {
-        $this->coreParametersHelper = $coreParametersHelper;
-    }
-
     public static function getSubscribedEvents(): array
     {
         return [

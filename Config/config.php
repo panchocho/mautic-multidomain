@@ -15,7 +15,8 @@ return [
             'mautic.multidomain.subscriber.request' => [
                 'class'     => \MauticPlugin\MauticMultidomainBundle\EventListener\RequestListener::class,
                 'arguments' => [
-                    'mautic.helper.core_parameters'
+                    'mautic.helper.core_parameters',
+                    'router',
                 ],
             ],
             'mautic.multidomain.subscriber.email' => [
@@ -26,9 +27,6 @@ return [
             ],
             'mautic.multidomain.subscriber.tracking' => [
                 'class'     => \MauticPlugin\MauticMultidomainBundle\EventListener\TrackingSubscriber::class,
-                'arguments' => [
-                    'mautic.helper.core_parameters'
-                ],
             ],
             'mautic.multidomain.subscriber.config' => [
                 'class'     => \MauticPlugin\MauticMultidomainBundle\EventListener\ConfigSubscriber::class,

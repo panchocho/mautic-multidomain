@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace MauticPlugin\MauticMultidomainBundle\EventListener;
 
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
+use Mautic\CoreBundle\Helper\ClickthroughHelper;
 use Mautic\EmailBundle\EmailEvents;
-use Mautic\EmailBundle\Event\EmailBuilderEvent;
 use Mautic\EmailBundle\Event\EmailSendEvent;
 use Mautic\EmailBundle\Helper\MailHelper;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -14,17 +14,14 @@ use Symfony\Component\Mailer\Transport\TransportInterface;
 
 class EmailSubscriber implements EventSubscriberInterface
 {
-    private CoreParametersHelper $coreParametersHelper;
-
-    public function __construct(CoreParametersHelper $coreParametersHelper)
+    public function __construct(private CoreParametersHelper $coreParametersHelper)
     {
-        $this->coreParametersHelper = $coreParametersHelper;
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            EmailEvents::EMAIL_ON_SEND   => ['onEmailSend', 0],
+            EmailEvents::EMAIL_ON_SEND    => ['onEmailSend', 0],
             EmailEvents::EMAIL_ON_DISPLAY => ['onEmailDisplay', 0],
         ];
     }
@@ -35,6 +32,8 @@ class EmailSubscriber implements EventSubscriberInterface
         if (null === $senderDomain) {
             return;
         }
+
+        $trackingDomain = $senderDomain;
 
         $domainMailerConfig = $this->resolveDomainMailerConfig($senderDomain);
         if ([] !== $domainMailerConfig) {
@@ -47,12 +46,33 @@ class EmailSubscriber implements EventSubscriberInterface
                     $senderDomain = $configuredFromDomain;
                 }
             }
+
+            $configuredTrackingDomain = $this->readConfigString($domainMailerConfig, 'tracking_domain');
+            if (null !== $configuredTrackingDomain) {
+                $trackingDomain = $this->normalizeDomain($configuredTrackingDomain) ?? $trackingDomain;
+            }
         }
 
-        $this->rewriteDomains($event, $senderDomain);
+        if ($this->isAllowedDomain($trackingDomain)) {
+            $this->rewriteDomains($event, $trackingDomain);
+            $this->rewriteTrackingPixel($event, $trackingDomain);
+        }
     }
 
-    public function onEmailDisplay(EmailBuilderEvent $event): void
+    private function rewriteTrackingPixel(EmailSendEvent $event, string $trackingDomain): void
+    {
+        $helper = $event->getHelper();
+        if (!$helper instanceof MailHelper || !$helper->getIdHash()) {
+            return;
+        }
+
+        $pixelUrl = 'https://'.$trackingDomain.'/email/'.rawurlencode((string) $helper->getIdHash()).'.gif?ct='
+            .ClickthroughHelper::encodeArrayForUrl(['sent_time' => time()]);
+
+        $event->addToken('{tracking_pixel}', $pixelUrl);
+    }
+
+    public function onEmailDisplay(EmailSendEvent $event): void
     {
         // When viewing the email in the browser
         // Email display hooks are kept for future display-time domain customizations.
@@ -156,7 +176,7 @@ class EmailSubscriber implements EventSubscriberInterface
         }
 
         try {
-            $decoded = json_decode($rawConfig, true, 512, JSON_THROW_ON_ERROR);
+            $decoded = json_decode(trim($rawConfig), true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return [];
         }
@@ -278,7 +298,7 @@ class EmailSubscriber implements EventSubscriberInterface
             $helperTransportProperty = $helperReflection->getProperty('transport');
             $helperTransportProperty->setAccessible(true);
             $helperTransportProperty->setValue($helper, $newTransport);
-        } catch (\ReflectionException) {
+        } catch (\Throwable) {
             // Ignore silently to preserve default behavior if internals change.
         }
     }
@@ -299,21 +319,73 @@ class EmailSubscriber implements EventSubscriberInterface
 
     private function extractDomainFromAddress(string $address): ?string
     {
-        $address = trim($address);
-        if ('' === $address) {
+        $normalizedAddress = trim($address);
+        if ('' === $normalizedAddress) {
             return null;
         }
 
-        if (preg_match('/<([^>]+)>/', $address, $matches)) {
-            $address = trim($matches[1]);
+        if (preg_match('/<([^>]+)>/', $normalizedAddress, $matches)) {
+            $normalizedAddress = trim($matches[1]);
         }
 
-        $parts = explode('@', $address);
+        $parts = explode('@', $normalizedAddress);
         if (count($parts) < 2) {
             return null;
         }
 
-        $domain = strtolower(trim((string) end($parts)));
+        $domain = $this->normalizeDomain((string) end($parts));
+
+        return $domain;
+    }
+
+    private function isAllowedDomain(string $domain): bool
+    {
+        $allowedDomains = $this->getAllowedDomains();
+        if ([] === $allowedDomains) {
+            return false;
+        }
+
+        foreach ($allowedDomains as $allowedDomain) {
+            if ($domain === $allowedDomain || str_ends_with($domain, '.'.$allowedDomain)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getAllowedDomains(): array
+    {
+        $allowedDomainsString = (string) $this->coreParametersHelper->get('allowed_domains', '');
+        if ('' === trim($allowedDomainsString)) {
+            return [];
+        }
+
+        $domains = preg_split('/[\s,]+/', $allowedDomainsString) ?: [];
+        $normalizedDomains = [];
+
+        foreach ($domains as $domain) {
+            $normalizedDomain = $this->normalizeDomain($domain);
+            if (null === $normalizedDomain) {
+                continue;
+            }
+
+            $normalizedDomains[$normalizedDomain] = $normalizedDomain;
+        }
+
+        return array_values($normalizedDomains);
+    }
+
+    private function normalizeDomain(string $domain): ?string
+    {
+        $domain = strtolower(trim($domain));
+        $domain = preg_replace('#^https?://#', '', $domain) ?? $domain;
+        $domain = preg_replace('#/.*$#', '', $domain) ?? $domain;
+        $domain = preg_replace('#:\d+$#', '', $domain) ?? $domain;
+        $domain = trim($domain, '.');
 
         return '' === $domain ? null : $domain;
     }
