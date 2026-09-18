@@ -4,11 +4,12 @@ declare(strict_types=1);
 return [
     'name'        => 'Mautic Multidomain Bundle',
     'description' => 'Enables tracking and serving content across multiple domains dynamically based on the request host.',
-    'version'     => '1.0.0',
+    'version'     => '1.1.0',
     'author'      => 'Antigravity',
     'parameters'  => [
-        'allowed_domains'   => '',
-        'domain_mailer_map' => '',
+        // Multidomain owns tracking hosts only. Sending providers and credentials
+        // belong to SmartMailer Router, never to a per-domain JSON map.
+        'allowed_domains' => '',
     ],
     'services'    => [
         'events' => [
@@ -22,7 +23,8 @@ return [
             'mautic.multidomain.subscriber.email' => [
                 'class'     => \MauticPlugin\MauticMultidomainBundle\EventListener\EmailSubscriber::class,
                 'arguments' => [
-                    'mautic.helper.core_parameters'
+                    'mautic.helper.core_parameters',
+                    'doctrine.dbal.default_connection',
                 ],
             ],
             'mautic.multidomain.subscriber.tracking' => [
